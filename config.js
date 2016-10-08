@@ -25,6 +25,7 @@ module.exports = {
   inputFileAbsPath: path.resolve( __dirname, fileName ),
 
   // Working directories within this project
+  projectRoot: __dirname,
   tilesDir: path.join( __dirname, 'tiles' ),
   outputDir: path.join( __dirname, 'output' ),
 

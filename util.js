@@ -62,10 +62,22 @@ const execCommand = ( command, quiet ) => {
   });
 };
 
+/**
+ * Execute a shell command and return a promise that will resolve or exit
+ * when that command completes, without showing the command's output
+ *
+ * @param {string} command A shell command string e.g. "mv file1 file2"
+ * @returns {Promise} A promise that completes when the command finishes
+ */
+const execQuietly = command => execCommand( command, true );
 
-const execRegardless = command => {
-  return execCommand( command ).catch( err => console.log( err ) );
-};
+/**
+ * Execute the command and ignore errors
+ *
+ * @param {string} command A shell command string e.g. "mv file1 file2"
+ * @returns {Promise} A promise that completes when the command exits
+ */
+const execRegardless = command => execCommand( command ).catch( err => console.log( err ) );
 
 /**
  * Helper function that takes in an array of functions that return promises,
@@ -88,6 +100,7 @@ module.exports = {
   exitIfHelpRequested,
   ls,
   execCommand,
+  execQuietly,
   execRegardless,
   runInSequence,
   log
