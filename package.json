@@ -1,0 +1,14 @@
+{
+  "name": "gridify-and-style-transfer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "gridify.js",
+  "scripts": {
+    "start": "node gridify.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "K Adam White",
+  "license": "MIT"
+}
