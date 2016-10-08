@@ -15,7 +15,7 @@ const neuralStylePath = '~/torch/neural-style';
 // because it is amazing.
 const fileName = process.argv.filter( ( arg, idx ) => {
   return '--file' === process.argv[ idx - 1 ];
-})[ 0 ] || 'algorithm14.tif';
+})[ 0 ] || 'algorithm14.png';
 
 const absPathFromHomeRelative = pathStr => path.join( process.env.HOME, pathStr.replace( /^~\//, '' ) );
 
