@@ -6,14 +6,30 @@ http://imagemagick.org/Usage/crop/#crop_tile
 http://imagemagick.org/Usage/crop/#crop_equal
 */
 const util = require( './util' );
-const { ls, execCommand, execQuietly, execRegardless, runInSequence, log } = util;
+const {
+  execCommand,
+  execQuietly,
+  execRegardless,
+  getDimensions,
+  log,
+  ls,
+  runInSequence
+} = util;
 
 // If --help was specified, log help text & exit
 util.exitIfHelpRequested();
 
 const config = require( './config' );
-const { inputFile, inputFileAbsPath, tilePattern, tilesDir, outputDir } = config;
-const { projectRoot, neuralStyleAbsPath } = config;
+const {
+  inputFile,
+  inputFileAbsPath,
+  maxTileSize,
+  neuralStyleAbsPath,
+  outputDir,
+  projectRoot,
+  tilePattern,
+  tilesDir
+} = config;
 
 // Tile output directory helper method
 const tile = filename => `${tilesDir}/${filename}`;
@@ -24,11 +40,7 @@ const output = filename => `${outputDir}/${filename}`;
 // Neural Style working directory helper method
 const nsDir = filename => `${neuralStyleAbsPath}/${filename}`;
 
-// Move a file to the neural style directory
-const copyFileToNeuralStyleDir = file => execQuietly( `mv ${tile(file)} ${nsDir(file)}` );
-
-// Copy a file from the neural style directory back to its source tile
-const copyResultBackToTilesDir = file => execQuietly( `cp ${nsDir(file)} ${tile(file)}` );
+let tileSize;
 
 // Empty & recreate the tiles & final output directories
 Promise.all([
@@ -36,9 +48,19 @@ Promise.all([
   execQuietly( `rm -rf ${outputDir}` ).then( () => execQuietly( `mkdir ${outputDir}` ) ),
   execQuietly( `rm -rf ${tilesDir}` ).then( () => execQuietly( `mkdir ${tilesDir}` ) )
 ])
+  .then( log( `\nCalculating optimal tile dimensions...` ) )
+  .then( () => getDimensions( inputFileAbsPath ) )
+  .then( dimensions => {
+    console.log( dimensions );
+    const maxTilesFor = size => Math.round( size / ( Math.floor( size / maxTileSize ) + 1 ) );
+    tileSize = dimensions.width % maxTileSize > dimensions.height % maxTileSize ?
+      maxTilesFor( dimensions.width ) :
+      maxTilesFor( dimensions.height );
+  })
+  .then( () => console.log( `${tileSize}x${tileSize}px` ) )
   .then( log( `\nBreaking input image ${inputFile} into tiles...` ) )
   // Run our imagemagick command to tile the image
-  .then( () => execCommand( `convert ${inputFileAbsPath} +gravity -crop 320x320 ${tile(tilePattern)}` ) )
+  .then( () => execCommand( `convert ${inputFileAbsPath} +gravity -crop ${tileSize}x${tileSize} ${tile(tilePattern)}` ) )
   // Change to neural style directory
   .then( () => process.chdir( neuralStyleAbsPath ) )
   // Figure out how many tiles were created to deduce the range for our -layers command input
@@ -47,10 +69,20 @@ Promise.all([
   .then( files => {
     console.log( `${files.length} tiles generated.` );
 
-    const copyAndProcessFiles = files.map( file => () => {
-      return copyFileToNeuralStyleDir( file )
-        .then( () => copyResultBackToTilesDir( file ) )
-        .then( () => execQuietly( `rm ${nsDir(file)}` ) );
+    const filesToCopy = [ files[ 0 ] ];
+    const copyAndProcessFiles = filesToCopy.map( file => () => {
+      // Copy file to Neural Style directory
+      return execQuietly( `mv ${tile(file)} ${nsDir(file)}` )
+        // Run neural style
+        .then( () => execCommand([
+          `th neural_style.lua`,
+          `-style_image ${inputFileAbsPath}`,
+          `-content_image ${nsDir(file)}`,
+          `-image_size ${tileSize} -num_iterations 1 -gpu -1`
+        ].join( ' ' ) ) )
+        // Copy output file back
+        .then( () => execQuietly( `mv ${nsDir('out.png')} ${tile(file)}` ) )
+        // .then( () => execQuietly( `rm ${nsDir('*.png')}` ) );
     });
 
     return runInSequence( copyAndProcessFiles )

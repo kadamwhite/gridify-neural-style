@@ -2,6 +2,7 @@
 
 const exec = require( 'child_process' ).exec;
 const fs = require( 'fs' );
+const calipers = require( 'calipers' )( 'png' );
 
 const exitIfHelpRequested = () => {
   if ( process.argv.indexOf( '--help' ) > -1 ) {
@@ -94,6 +95,10 @@ const runInSequence = arrOfFnsReturningPromises => {
   );
 };
 
+const getDimensions = filePath => calipers
+  .measure( filePath )
+  .then( result => result.pages[ 0 ] );
+
 const log = message => () => console.log( `${message}\n` );
 
 module.exports = {
@@ -103,5 +108,6 @@ module.exports = {
   execQuietly,
   execRegardless,
   runInSequence,
+  getDimensions,
   log
 };

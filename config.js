@@ -2,6 +2,11 @@
 
 const path = require( 'path' );
 
+// Read in a command-line argument specified with a name like `--file`
+const getArg = ( arg, defaultValue ) => process.argv.filter( ( arg, idx ) => {
+  return arg === process.argv[ idx - 1 ];
+})[ 0 ] || defaultValue;
+
 // Change this to point to where you have torch installed, relative to your
 // home directory
 const torchPath = '~/torch';
@@ -13,9 +18,7 @@ const neuralStylePath = '~/torch/neural-style';
 // Read in the name of a file to split & process from the command line,
 // specified with `--file filename`. Use algo14 as a "sensible default"
 // because it is amazing.
-const fileName = process.argv.filter( ( arg, idx ) => {
-  return '--file' === process.argv[ idx - 1 ];
-})[ 0 ] || 'algorithm14.png';
+const fileName = getArg( '--file', 'algorithm14.png' );
 
 const absPathFromHomeRelative = pathStr => path.join( process.env.HOME, pathStr.replace( /^~\//, '' ) );
 
@@ -31,6 +34,9 @@ module.exports = {
 
   // Working file name format
   tilePattern: 'tiles_%d.png',
+
+  // Working file max dimensions
+  maxTileSize: 320,
 
   // Torch location information
   torchPath: torchPath,

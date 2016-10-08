@@ -10,5 +10,9 @@
   },
   "keywords": [],
   "author": "K Adam White",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "calipers": "^2.0.0",
+    "calipers-png": "^2.0.0"
+  }
 }
