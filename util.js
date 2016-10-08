@@ -3,6 +3,25 @@
 const exec = require( 'child_process' ).exec;
 const fs = require( 'fs' );
 
+const exitIfHelpRequested = () => {
+  if ( process.argv.indexOf( '--help' ) > -1 ) {
+    console.log(`
+Use this script to convert an image into a set of tiles and run the "neural
+algorithm of artistic style" process on each tile, creating a gridded image
+of the input file's original resolution with the neural style of the whole
+applied to each individual segment.
+
+This script expects torch to be installed in ~/torch, and the neural-style
+library for torch to be cloned into ~/torch/neural-style: if you have installed
+these tools in alternative locations please update config.js.
+
+Usage:
+
+   node gridify.js --file your-input-file.jpg` );
+    process.exit();
+  }
+};
+
 /**
  * Get the list of files in a directory, either as a list of file and subdir
  * names or a list of absolute file system paths
@@ -63,9 +82,13 @@ const runInSequence = arrOfFnsReturningPromises => {
   );
 };
 
+const log = message => () => console.log( `${message}\n` );
+
 module.exports = {
+  exitIfHelpRequested,
   ls,
   execCommand,
   execRegardless,
-  runInSequence
+  runInSequence,
+  log
 };
