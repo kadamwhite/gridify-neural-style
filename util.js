@@ -27,6 +27,8 @@ Flags:
     --help: display this help
     --no-gpu: run w/out GPU acceleration (equiv. to -gpu -1 in neural-style)
     --skip-nn: skip the style transfer step, for testing purposes
+    --fast: Only run 5 neural net iterations
+    --half: Only run 500 neural net iterations
     --verbose: log the output from all commands` );
     process.exit();
   }

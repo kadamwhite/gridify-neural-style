@@ -132,10 +132,13 @@ Promise.all([
         // Run neural style
         .then( () => exec([
           `th neural_style.lua`,
-          `-style_image ${inputFileAbsPath}`,
+          `-style_image ${inputFileAbsPath},${nsDir(file)}`,
+          `-style_blend_weights 7,2`,
           `-content_image ${nsDir(file)}`,
+          `-original_colors`,
           `-image_size ${tileSize}`,
           hasArg( '--fast' ) ? `-num_iterations 5` : '',
+          hasArg( '--half' ) ? `-num_iterations 500` : '',
           hasArg( '--no-gpu' ) ? `-gpu -1` : ''
         ].join( ' ' ) ) )
         // Copy output file back
