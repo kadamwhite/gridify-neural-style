@@ -18,7 +18,15 @@ these tools in alternative locations please update config.js.
 
 Usage:
 
-   node gridify.js --file your-input-file.jpg` );
+    node gridify.js [arguments & flags, see below]
+
+Flags:
+
+    --file: specify the file to use: --file your-input-file.jpg
+    --help: display this help
+    --no-gpu: run w/out GPU acceleration (equiv. to -gpu -1 in neural-style)
+    --skip-nn: skip the style transfer step, for testing purposes
+    --verbose: log the output from all commands` );
     process.exit();
   }
 };
@@ -59,8 +67,8 @@ const ls = ( inputDir, absolute ) => {
  * @returns {Promise} A promise that completes when the command finishes
  */
 const execCommand = ( command, quiet ) => {
+  !quiet && console.log( command );
   return new Promise( ( resolve, reject ) => {
-    !quiet && console.log( command );
     exec( command, ( error, stdout, stderr ) => {
       if ( error ) {
         return reject( error );
@@ -86,7 +94,7 @@ const execQuietly = command => execCommand( command, true );
  * @param {boolean} quiet Whether to suppress outputting the command to be run
  * @returns {Promise} A promise that completes when the command exits
  */
-const execRegardless = ( command, quiet ) => execCommand( command, quiet ).catch( err => console.log( err ) );
+const execRegardless = ( command, quiet ) => execCommand( command, quiet ).catch( err => !quiet && console.log( err ) );
 
 /**
  * Helper function that takes in an array of functions that return promises,

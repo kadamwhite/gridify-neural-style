@@ -12,6 +12,7 @@ const {
   execQuietly,
   execRegardless,
   getDimensions,
+  hasArg,
   log,
   ls,
   runInSequence
@@ -43,6 +44,8 @@ const nsDir = filename => `${neuralStyleAbsPath}/${filename}`;
 
 let tileSize;
 
+const verbose = hasArg( '--verbose' );
+
 // Empty & recreate the tiles & final output directories
 Promise.all([
   console.log( `Emptying temporary directories...\n` ),
@@ -68,31 +71,40 @@ Promise.all([
   .then( log( `\nCounting tiles...` ) )
   .then( () => ls( tilesDir ) )
   .then( files => {
-    console.log( `${files.length} tiles generated.` );
+    console.log( `${files.length} tiles generated.\n` );
 
-    // const filesToCopy = [].concat( files );
-    // filesToCopy.length = 4;
-    const copyAndProcessFiles = files.map( file => () => {
+    if ( hasArg( '--skip-nn' ) ) {
+      return files;
+    }
+
+    const filesToConvert = [].concat( files );
+    if ( hasArg( '--fast' ) ) {
+      filesToConvert.length = 3;
+    }
+    const copyAndProcessFiles = filesToConvert.map( file => () => {
       const tileOutputDir = path.join( tilesDir, file.replace( /\.[\w\d]+$/, '' ) );
 
+      const exec = verbose ? execCommand : execQuietly;
+
       return execRegardless( `rm ${nsDir('*.png')}`, true )
+        .then( log( `Processing file ${file}...` ) )
         // Copy file to Neural Style directory
-        .then( () => execQuietly( `mv ${tile(file)} ${nsDir(file)}` ) )
+        .then( () => exec( `mv ${tile(file)} ${nsDir(file)}` ) )
         // Run neural style
-        .then( () => execCommand([
+        .then( () => exec([
           `th neural_style.lua`,
           `-style_image ${inputFileAbsPath}`,
           `-content_image ${nsDir(file)}`,
           `-image_size ${tileSize}`,
-          // `-num_iterations 50`,
-          // `-gpu -1`
+          hasArg( '--fast' ) ? `-num_iterations 5` : '',
+          hasArg( '--no-gpu' ) ? `-gpu -1` : ''
         ].join( ' ' ) ) )
         // Copy output file back
-        .then( () => execQuietly( `cp ${nsDir('out.png')} ${tile(file)}` ) )
-        .then( () => execQuietly( `rm ${nsDir(file)}` ) )
+        .then( () => exec( `cp ${nsDir('out.png')} ${tile(file)}` ) )
+        .then( () => exec( `rm ${nsDir(file)}` ) )
         // Save intermediate steps
-        .then( () => execQuietly( `mkdir ${tileOutputDir}` ) )
-        .then( () => execCommand( `mv *.png ${tileOutputDir}/` ) )
+        .then( () => exec( `mkdir ${tileOutputDir}` ) )
+        .then( () => exec( `mv *.png ${tileOutputDir}/` ) );
     });
 
     return runInSequence( copyAndProcessFiles )
@@ -104,7 +116,7 @@ Promise.all([
     const range = `[0-${files.length-1}]`;
 
     // Reassemble the image
-    console.log( `Re-assembling image...\n` );
+    console.log( `\nRe-assembling image...\n` );
     return execCommand( `convert ${tile(tilePattern + range)} -background none -layers merge ${output('output.png')}` );
   })
   .then( log( `\nFinal image saved to output/output.png` ) )
