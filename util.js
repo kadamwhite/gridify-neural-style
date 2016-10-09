@@ -5,7 +5,7 @@ const fs = require( 'fs' );
 const calipers = require( 'calipers' )( 'png' );
 
 const exitIfHelpRequested = () => {
-  if ( process.argv.indexOf( '--help' ) > -1 ) {
+  if ( hasArg( '--help' ) ) {
     console.log(`
 Use this script to convert an image into a set of tiles and run the "neural
 algorithm of artistic style" process on each tile, creating a gridded image
@@ -22,6 +22,13 @@ Usage:
     process.exit();
   }
 };
+
+// Read in a command-line argument specified with a name like `--file`
+const getArg = ( arg, defaultValue ) => process.argv.filter( ( arg, idx ) => {
+  return arg === process.argv[ idx - 1 ];
+})[ 0 ] || defaultValue;
+
+const hasArg = arg => process.argv.indexOf( arg ) > -1;
 
 /**
  * Get the list of files in a directory, either as a list of file and subdir
@@ -76,9 +83,10 @@ const execQuietly = command => execCommand( command, true );
  * Execute the command and ignore errors
  *
  * @param {string} command A shell command string e.g. "mv file1 file2"
+ * @param {boolean} quiet Whether to suppress outputting the command to be run
  * @returns {Promise} A promise that completes when the command exits
  */
-const execRegardless = command => execCommand( command ).catch( err => console.log( err ) );
+const execRegardless = ( command, quiet ) => execCommand( command, quiet ).catch( err => console.log( err ) );
 
 /**
  * Helper function that takes in an array of functions that return promises,
@@ -103,6 +111,8 @@ const log = message => () => console.log( `${message}\n` );
 
 module.exports = {
   exitIfHelpRequested,
+  getArg,
+  hasArg,
   ls,
   execCommand,
   execQuietly,

@@ -5,6 +5,7 @@ Relevant resources:
 http://imagemagick.org/Usage/crop/#crop_tile
 http://imagemagick.org/Usage/crop/#crop_equal
 */
+const path = require( 'path' );
 const util = require( './util' );
 const {
   execCommand,
@@ -69,20 +70,29 @@ Promise.all([
   .then( files => {
     console.log( `${files.length} tiles generated.` );
 
-    const filesToCopy = [ files[ 0 ] ];
-    const copyAndProcessFiles = filesToCopy.map( file => () => {
-      // Copy file to Neural Style directory
-      return execQuietly( `mv ${tile(file)} ${nsDir(file)}` )
+    // const filesToCopy = [].concat( files );
+    // filesToCopy.length = 4;
+    const copyAndProcessFiles = files.map( file => () => {
+      const tileOutputDir = path.join( tilesDir, file.replace( /\.[\w\d]+$/, '' ) );
+
+      return execRegardless( `rm ${nsDir('*.png')}`, true )
+        // Copy file to Neural Style directory
+        .then( () => execQuietly( `mv ${tile(file)} ${nsDir(file)}` ) )
         // Run neural style
         .then( () => execCommand([
           `th neural_style.lua`,
           `-style_image ${inputFileAbsPath}`,
           `-content_image ${nsDir(file)}`,
-          `-image_size ${tileSize} -num_iterations 1 -gpu -1`
+          `-image_size ${tileSize}`,
+          // `-num_iterations 50`,
+          // `-gpu -1`
         ].join( ' ' ) ) )
         // Copy output file back
-        .then( () => execQuietly( `mv ${nsDir('out.png')} ${tile(file)}` ) )
-        // .then( () => execQuietly( `rm ${nsDir('*.png')}` ) );
+        .then( () => execQuietly( `cp ${nsDir('out.png')} ${tile(file)}` ) )
+        .then( () => execQuietly( `rm ${nsDir(file)}` ) )
+        // Save intermediate steps
+        .then( () => execQuietly( `mkdir ${tileOutputDir}` ) )
+        .then( () => execCommand( `mv *.png ${tileOutputDir}/` ) )
     });
 
     return runInSequence( copyAndProcessFiles )

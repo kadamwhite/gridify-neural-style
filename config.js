@@ -1,11 +1,7 @@
 'use strict';
 
 const path = require( 'path' );
-
-// Read in a command-line argument specified with a name like `--file`
-const getArg = ( arg, defaultValue ) => process.argv.filter( ( arg, idx ) => {
-  return arg === process.argv[ idx - 1 ];
-})[ 0 ] || defaultValue;
+const { getArg, hasArg } = require( './util' );
 
 // Change this to point to where you have torch installed, relative to your
 // home directory
