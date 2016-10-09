@@ -6,6 +6,8 @@ http://imagemagick.org/Usage/crop/#crop_tile
 http://imagemagick.org/Usage/crop/#crop_equal
 */
 const path = require( 'path' );
+const gm = require( 'gm' );
+
 const util = require( './util' );
 const {
   execCommand,
@@ -29,7 +31,6 @@ const {
   neuralStyleAbsPath,
   outputDir,
   projectRoot,
-  tilePattern,
   tilesDir
 } = config;
 
@@ -43,8 +44,44 @@ const output = filename => `${outputDir}/${filename}`;
 const nsDir = filename => `${neuralStyleAbsPath}/${filename}`;
 
 let tileSize;
+let columns;
+
+// Working file name format
+const tilePattern = 'tiles_%d.png';
+const numFromTile = tileName => parseInt( tileName.match( /\d+/ ), 10 );
 
 const verbose = hasArg( '--verbose' );
+
+const positionFromTile = ( tileName ) => {
+  const tile = numFromTile( tileName );
+  const col = tile % columns;
+  const row = Math.floor( tile / columns );
+  return `+${col * tileSize}+${row * tileSize}`;
+};
+
+const reassemble = ( files, outputFile ) => new Promise( ( resolve, reject ) => {
+  // gm()
+  //   .in('-page', '+0+0')  // Custom place for each of the images
+  //   .in('a.jpg')
+  //   ...
+  const addTile = ( gmChain, file ) => {
+    console.log( '-page', positionFromTile( file ) );
+    console.log( tile( file ) );
+    return gmChain
+    .in( '-page', positionFromTile( file ) )
+    .in( tile( file ) );
+  }
+  files
+    .reduce( addTile, gm() )
+    // .minify()  // Halves the size, 512x512 -> 256x256
+    .mosaic()  // Merge images as a matrix
+    .write( outputFile, err => {
+      if ( err ) {
+        return reject( err );
+      }
+      resolve();
+    });
+});
 
 // Empty & recreate the tiles & final output directories
 Promise.all([
@@ -55,13 +92,14 @@ Promise.all([
   .then( log( `\nCalculating optimal tile dimensions...` ) )
   .then( () => getDimensions( inputFileAbsPath ) )
   .then( dimensions => {
-    console.log( dimensions );
+    const { width, height } = dimensions;
     const maxTilesFor = size => Math.round( size / ( Math.floor( size / maxTileSize ) + 1 ) );
-    tileSize = dimensions.width % maxTileSize > dimensions.height % maxTileSize ?
-      maxTilesFor( dimensions.width ) :
-      maxTilesFor( dimensions.height );
+    tileSize = width % maxTileSize > height % maxTileSize ?
+      maxTilesFor( width ) :
+      maxTilesFor( height );
+    columns = Math.ceil( width / tileSize );
   })
-  .then( () => console.log( `${tileSize}x${tileSize}px` ) )
+  .then( () => console.log( `Rendering tiles of ${tileSize}x${tileSize}px in ${columns} columns` ) )
   .then( log( `\nBreaking input image ${inputFile} into tiles...` ) )
   // Run our imagemagick command to tile the image
   .then( () => execCommand( `convert ${inputFileAbsPath} +gravity -crop ${tileSize}x${tileSize} ${tile(tilePattern)}` ) )
@@ -70,6 +108,7 @@ Promise.all([
   // Figure out how many tiles were created to deduce the range for our -layers command input
   .then( log( `\nCounting tiles...` ) )
   .then( () => ls( tilesDir ) )
+  .then( files => files.sort( ( a, b ) => numFromTile( a ) - numFromTile( b ) ) )
   .then( files => {
     console.log( `${files.length} tiles generated.\n` );
 
@@ -87,7 +126,7 @@ Promise.all([
       const exec = verbose ? execCommand : execQuietly;
 
       return execRegardless( `rm ${nsDir('*.png')}`, true )
-        .then( log( `Processing file ${file}...` ) )
+        .then( log( `\nProcessing file ${file}...` ) )
         // Copy file to Neural Style directory
         .then( () => exec( `mv ${tile(file)} ${nsDir(file)}` ) )
         // Run neural style
@@ -117,7 +156,8 @@ Promise.all([
 
     // Reassemble the image
     console.log( `\nRe-assembling image...\n` );
-    return execCommand( `convert ${tile(tilePattern + range)} -background none -layers merge ${output('output.png')}` );
+    return reassemble( files, output('output.png') );
+    // return execCommand( `convert ${tile(tilePattern + range)} -background none -layers merge ${output('output.png')}` );
   })
   .then( log( `\nFinal image saved to output/output.png` ) )
   .catch( err => console.error( err ) );

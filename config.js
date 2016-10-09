@@ -28,9 +28,6 @@ module.exports = {
   tilesDir: path.join( __dirname, 'tiles' ),
   outputDir: path.join( __dirname, 'output' ),
 
-  // Working file name format
-  tilePattern: 'tiles_%d.png',
-
   // Working file max dimensions
   maxTileSize: 320,
 

@@ -14,7 +14,8 @@ applied to each individual segment.
 
 This script expects torch to be installed in ~/torch, and the neural-style
 library for torch to be cloned into ~/torch/neural-style: if you have installed
-these tools in alternative locations please update config.js.
+these tools in alternative locations please update config.js. ImageMagick and
+GraphicsMagick must also be installed.
 
 Usage:
 
