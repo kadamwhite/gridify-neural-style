@@ -3,5 +3,8 @@ tiles/
 # Output files
 output/
 
+completed/
+input/
+
 node_modules/
 *.log

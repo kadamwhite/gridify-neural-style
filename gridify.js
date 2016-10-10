@@ -27,6 +27,7 @@ const config = require( './config' );
 const {
   inputFile,
   inputFileAbsPath,
+  styleFileAbsPath,
   maxTileSize,
   neuralStyleAbsPath,
   outputDir,
@@ -65,8 +66,6 @@ const reassemble = ( files, outputFile ) => new Promise( ( resolve, reject ) => 
   //   .in('a.jpg')
   //   ...
   const addTile = ( gmChain, file ) => {
-    console.log( '-page', positionFromTile( file ) );
-    console.log( tile( file ) );
     return gmChain
     .in( '-page', positionFromTile( file ) )
     .in( tile( file ) );
@@ -132,13 +131,14 @@ Promise.all([
         // Run neural style
         .then( () => exec([
           `th neural_style.lua`,
-          `-style_image ${inputFileAbsPath},${nsDir(file)}`,
+          `-style_image ${styleFileAbsPath},${nsDir(file)}`,
           `-style_blend_weights 7,2`,
           `-content_image ${nsDir(file)}`,
-          `-original_colors`,
+          `-original_colors 1`,
+          `-backend cudnn`,
           `-image_size ${tileSize}`,
           hasArg( '--fast' ) ? `-num_iterations 5` : '',
-          hasArg( '--half' ) ? `-num_iterations 500` : '',
+          hasArg( '--half' ) ? `-num_iterations 500` : '-num_iterations 1500',
           hasArg( '--no-gpu' ) ? `-gpu -1` : ''
         ].join( ' ' ) ) )
         // Copy output file back

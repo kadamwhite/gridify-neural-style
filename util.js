@@ -2,7 +2,7 @@
 
 const exec = require( 'child_process' ).exec;
 const fs = require( 'fs' );
-const calipers = require( 'calipers' )( 'png' );
+const calipers = require( 'calipers' )( 'png', 'jpeg' );
 
 const exitIfHelpRequested = () => {
   if ( hasArg( '--help' ) ) {
@@ -35,7 +35,7 @@ Flags:
 };
 
 // Read in a command-line argument specified with a name like `--file`
-const getArg = ( arg, defaultValue ) => process.argv.filter( ( arg, idx ) => {
+const getArg = ( arg, defaultValue ) => process.argv.filter( ( argvItem, idx ) => {
   return arg === process.argv[ idx - 1 ];
 })[ 0 ] || defaultValue;
 

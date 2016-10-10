@@ -16,12 +16,16 @@ const neuralStylePath = '~/torch/neural-style';
 // because it is amazing.
 const fileName = getArg( '--file', 'algorithm14.png' );
 
+const styleFileName = getArg( '--style', 'algorithm14.png' );
+
 const absPathFromHomeRelative = pathStr => path.join( process.env.HOME, pathStr.replace( /^~\//, '' ) );
 
 module.exports = {
   // Source file information
   inputFile: fileName,
   inputFileAbsPath: path.resolve( __dirname, fileName ),
+  styleFile: styleFileName,
+  styleFileAbsPath: path.resolve( __dirname, styleFileName ),
 
   // Working directories within this project
   projectRoot: __dirname,
@@ -29,7 +33,7 @@ module.exports = {
   outputDir: path.join( __dirname, 'output' ),
 
   // Working file max dimensions
-  maxTileSize: 320,
+  maxTileSize: 400,
 
   // Torch location information
   torchPath: torchPath,
