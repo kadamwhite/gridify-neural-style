@@ -6,6 +6,7 @@
   "main": "gridify.js",
   "scripts": {
     "start": "node gridify.js",
+    "lint": "eslint --ext js,jsx ./*.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -15,6 +16,14 @@
     "calipers": "^2.0.0",
     "calipers-jpeg": "^2.0.0",
     "calipers-png": "^2.0.0",
+    "cli-spinner": "^0.2.6",
     "gm": "^1.23.0"
+  },
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb": "^14.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^3.0.2",
+    "eslint-plugin-react": "^6.9.0"
   }
 }
