@@ -29,7 +29,7 @@ module.exports = {
     'space-in-parens': ['error', 'always', { exceptions: ['{}', '[]', 'empty'] }],
     'computed-property-spacing': ['error', 'always'],
     'arrow-parens': ['error', 'as-needed', {
-      requireForBlockBody: true
+      requireForBlockBody: false
     }],
 
     'import/no-extraneous-dependencies': ['error', { devDependencies: [

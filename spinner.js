@@ -14,10 +14,8 @@ const stopSpinner = () => {
 
 spinner( 'foo' );
 
-setTimeout(function() {
+setTimeout( () => {
   stopSpinner();
   spinner( 'bar' );
-  setTimeout(function() {
-    stopSpinner();
-  }, 1000 );
-}, 1000 )
+  setTimeout( () => stopSpinner(), 1000 );
+}, 1000 );

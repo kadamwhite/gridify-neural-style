@@ -1,4 +1,5 @@
 'use strict';
+
 /*
 Relevant resources:
 
@@ -9,6 +10,7 @@ const path = require( 'path' );
 const gm = require( 'gm' );
 
 const util = require( './util' );
+
 const {
   execCommand,
   execQuietly,
@@ -17,13 +19,14 @@ const {
   hasArg,
   log,
   ls,
-  runInSequence
+  runInSequence,
 } = util;
 
 // If --help was specified, log help text & exit
 util.exitIfHelpRequested();
 
 const config = require( './config' );
+
 const {
   inputFile,
   inputFileAbsPath,
@@ -32,7 +35,7 @@ const {
   neuralStyleAbsPath,
   outputDir,
   projectRoot,
-  tilesDir
+  tilesDir,
 } = config;
 
 // Tile output directory helper method
@@ -53,7 +56,7 @@ const numFromTile = tileName => parseInt( tileName.match( /\d+/ ), 10 );
 
 const verbose = hasArg( '--verbose' );
 
-const positionFromTile = ( tileName ) => {
+const positionFromTile = tileName => {
   const tile = numFromTile( tileName );
   const col = tile % columns;
   const row = Math.floor( tile / columns );
@@ -65,28 +68,24 @@ const reassemble = ( files, outputFile ) => new Promise( ( resolve, reject ) => 
   //   .in('-page', '+0+0')  // Custom place for each of the images
   //   .in('a.jpg')
   //   ...
-  const addTile = ( gmChain, file ) => {
-    return gmChain
+  const addTile = ( gmChain, file ) => gmChain
     .in( '-page', positionFromTile( file ) )
     .in( tile( file ) );
-  }
+
   files
     .reduce( addTile, gm() )
     // .minify()  // Halves the size, 512x512 -> 256x256
     .mosaic()  // Merge images as a matrix
-    .write( outputFile, err => {
-      if ( err ) {
-        return reject( err );
-      }
-      resolve();
-    });
+    .write( outputFile, err => (
+      err ? reject( err ) : resolve()
+    ) );
 });
 
 // Empty & recreate the tiles & final output directories
 Promise.all([
   console.log( `Emptying temporary directories...\n` ),
   execQuietly( `rm -rf ${outputDir}` ).then( () => execQuietly( `mkdir ${outputDir}` ) ),
-  execQuietly( `rm -rf ${tilesDir}` ).then( () => execQuietly( `mkdir ${tilesDir}` ) )
+  execQuietly( `rm -rf ${tilesDir}` ).then( () => execQuietly( `mkdir ${tilesDir}` ) ),
 ])
   .then( log( `\nCalculating optimal tile dimensions...` ) )
   .then( () => getDimensions( inputFileAbsPath ) )
@@ -101,7 +100,7 @@ Promise.all([
   .then( () => console.log( `Rendering tiles of ${tileSize}x${tileSize}px in ${columns} columns` ) )
   .then( log( `\nBreaking input image ${inputFile} into tiles...` ) )
   // Run our imagemagick command to tile the image
-  .then( () => execCommand( `convert ${inputFileAbsPath} +gravity -crop ${tileSize}x${tileSize} ${tile(tilePattern)}` ) )
+  .then( () => execCommand( `convert ${inputFileAbsPath} +gravity -crop ${tileSize}x${tileSize} ${tile( tilePattern )}` ) )
   // Change to neural style directory
   .then( () => process.chdir( neuralStyleAbsPath ) )
   // Figure out how many tiles were created to deduce the range for our -layers command input
@@ -124,26 +123,26 @@ Promise.all([
 
       const exec = verbose ? execCommand : execQuietly;
 
-      return execRegardless( `rm ${nsDir('*.png')}`, true )
+      return execRegardless( `rm ${nsDir( '*.png' )}`, true )
         .then( log( `\nProcessing file ${file}...` ) )
         // Copy file to Neural Style directory
-        .then( () => exec( `mv ${tile(file)} ${nsDir(file)}` ) )
+        .then( () => exec( `mv ${tile( file )} ${nsDir( file )}` ) )
         // Run neural style
         .then( () => exec([
           `th neural_style.lua`,
-          `-style_image ${styleFileAbsPath},${nsDir(file)}`,
+          `-style_image ${styleFileAbsPath},${nsDir( file )}`,
           `-style_blend_weights 7,2`,
-          `-content_image ${nsDir(file)}`,
+          `-content_image ${nsDir( file )}`,
           `-original_colors 1`,
           `-backend cudnn`,
           `-image_size ${tileSize}`,
           hasArg( '--fast' ) ? `-num_iterations 5` : '',
           hasArg( '--half' ) ? `-num_iterations 500` : '-num_iterations 1500',
-          hasArg( '--no-gpu' ) ? `-gpu -1` : ''
+          hasArg( '--no-gpu' ) ? `-gpu -1` : '',
         ].join( ' ' ) ) )
         // Copy output file back
-        .then( () => exec( `cp ${nsDir('out.png')} ${tile(file)}` ) )
-        .then( () => exec( `rm ${nsDir(file)}` ) )
+        .then( () => exec( `cp ${nsDir( 'out.png' )} ${tile( file )}` ) )
+        .then( () => exec( `rm ${nsDir( file )}` ) )
         // Save intermediate steps
         .then( () => exec( `mkdir ${tileOutputDir}` ) )
         .then( () => exec( `mv *.png ${tileOutputDir}/` ) );
@@ -155,11 +154,11 @@ Promise.all([
   })
   .then( files => {
     // files will have format "tiles_0.png" through "tiles_nnn.png"
-    const range = `[0-${files.length-1}]`;
+    // const range = `[0-${files.length-1}]`;
 
     // Reassemble the image
     console.log( `\nRe-assembling image...\n` );
-    return reassemble( files, output('output.png') );
+    return reassemble( files, output( 'output.png' ) );
     // return execCommand( `convert ${tile(tilePattern + range)} -background none -layers merge ${output('output.png')}` );
   })
   .then( log( `\nFinal image saved to output/output.png` ) )

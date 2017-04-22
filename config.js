@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require( 'path' );
-const { getArg, hasArg } = require( './util' );
+const { getArg } = require( './util' );
 
 // Change this to point to where you have torch installed, relative to your
 // home directory
@@ -36,10 +36,10 @@ module.exports = {
   maxTileSize: 400,
 
   // Torch location information
-  torchPath: torchPath,
+  torchPath,
   torchAbsPath: absPathFromHomeRelative( torchPath ),
-  neuralStylePath: neuralStylePath,
-  neuralStyleAbsPath: absPathFromHomeRelative( neuralStylePath )
+  neuralStylePath,
+  neuralStyleAbsPath: absPathFromHomeRelative( neuralStylePath ),
 };
 
 Object.freeze( module.exports );

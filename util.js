@@ -4,9 +4,11 @@ const exec = require( 'child_process' ).exec;
 const fs = require( 'fs' );
 const calipers = require( 'calipers' )( 'png', 'jpeg' );
 
+const hasArg = arg => process.argv.indexOf( arg ) > -1;
+
 const exitIfHelpRequested = () => {
   if ( hasArg( '--help' ) ) {
-    console.log(`
+    console.log( `
 Use this script to convert an image into a set of tiles and run the "neural
 algorithm of artistic style" process on each tile, creating a gridded image
 of the input file's original resolution with the neural style of the whole
@@ -35,31 +37,24 @@ Flags:
 };
 
 // Read in a command-line argument specified with a name like `--file`
-const getArg = ( arg, defaultValue ) => process.argv.filter( ( argvItem, idx ) => {
-  return arg === process.argv[ idx - 1 ];
-})[ 0 ] || defaultValue;
 
-const hasArg = arg => process.argv.indexOf( arg ) > -1;
+const getArg = ( arg, defaultValue ) =>
+  process.argv.filter( ( argvItem, idx ) => (
+    arg === process.argv[ idx - 1 ]
+  ) )[ 0 ] || defaultValue;
 
 /**
- * Get the list of files in a directory, either as a list of file and subdir
- * names or a list of absolute file system paths
+ * Get the list of files in a directory as a list of file and subdir names
  *
  * @private
  * @param {string} inputDir The file system path to the directory to read
  * @returns {Promise} A promise to the string array of file names
  */
-const ls = ( inputDir, absolute ) => {
-  return new Promise( ( resolve, reject ) => {
-    fs.readdir( inputDir, ( err, list ) => {
-      if ( err ) {
-        return reject( err );
-      }
-
-      resolve( list );
-    });
-  });
-};
+const ls = inputDir => new Promise( ( resolve, reject ) => {
+  fs.readdir( inputDir, ( err, list ) => (
+    err ? reject( err ) : resolve( list )
+  ) );
+});
 
 /**
  * Execute a shell command and return a promise that will resolve or exit
@@ -70,14 +65,13 @@ const ls = ( inputDir, absolute ) => {
  * @returns {Promise} A promise that completes when the command finishes
  */
 const execCommand = ( command, quiet ) => {
-  !quiet && console.log( command );
+  if ( ! quiet ) {
+    console.log( command );
+  }
   return new Promise( ( resolve, reject ) => {
-    exec( command, ( error, stdout, stderr ) => {
-      if ( error ) {
-        return reject( error );
-      }
-      resolve();
-    });
+    exec( command, err => (
+      err ? reject( err ) : resolve()
+    ) );
   });
 };
 
@@ -97,7 +91,8 @@ const execQuietly = command => execCommand( command, true );
  * @param {boolean} quiet Whether to suppress outputting the command to be run
  * @returns {Promise} A promise that completes when the command exits
  */
-const execRegardless = ( command, quiet ) => execCommand( command, quiet ).catch( err => !quiet && console.log( err ) );
+const execRegardless = ( command, quiet ) => execCommand( command, quiet )
+  .catch( err => ! quiet && console.log( err ) );
 
 /**
  * Helper function that takes in an array of functions that return promises,
@@ -107,16 +102,15 @@ const execRegardless = ( command, quiet ) => execCommand( command, quiet ).catch
  * @returns {Promise} A promise that will resolve once all the promises
  * returned by that function successfully complete
  */
-const runInSequence = arrOfFnsReturningPromises => {
-  return arrOfFnsReturningPromises.reduce(
+const runInSequence = arrOfFnsReturningPromises =>
+  arrOfFnsReturningPromises.reduce(
     ( lastStep, startNextStep ) => lastStep.then( startNextStep ),
     Promise.resolve()
   );
-};
 
 const getDimensions = filePath => calipers
   .measure( filePath )
-  .then( result => result.pages[ 0 ] );
+  .then( result => result.pages[ 0 ]);
 
 const log = message => () => console.log( `${message}\n` );
 
@@ -130,5 +124,5 @@ module.exports = {
   execRegardless,
   runInSequence,
   getDimensions,
-  log
+  log,
 };
